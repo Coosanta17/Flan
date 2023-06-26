@@ -135,25 +135,6 @@ curseforge {
             }
         }
     }
-    project {
-        id = "${curse_id_forge}"
-        "${project.curse_versions}".split(', ').each {
-            addGameVersion "${it}"
-        }
-        addGameVersion "Forge"
-        mainArtifact(project(":forge").tasks.getByName('remapJar')) {
-            def txt = changelog(1).replace("\n-", "\n\n- ")
-            txt = txt + "\n\n" + "For past versions see: ${project.full_changelog}"
-            changelog = txt
-            changelogType = "markdown"
-            releaseType = 'release'
-        }
-        /*relations {
-            "${project.curse_dep_forge}".split(', ').each {
-                requiredDependency "${it}"
-            }
-        }*/
-    }
 }
 
 def discordNotif(fabric, forge) {
@@ -212,16 +193,6 @@ afterEvaluate {
         tasks.findByName("curseforge${curse_id_fabric}").mustRunAfter ":fabric:publish"
         doLast {
             discordNotif(true, false)
-        }
-    }
-
-    task buildUploadForge(group: "publishing") {
-        dependsOn cleanAll, ":forge:build", ":forge:publish", "curseforge${curse_id_forge}"
-        project("forge").build.mustRunAfter cleanAll
-        project("forge").publish.mustRunAfter ":forge:build"
-        tasks.findByName("curseforge${curse_id_forge}").mustRunAfter ":forge:publish"
-        doLast {
-            discordNotif(false, true)
         }
     }
 }

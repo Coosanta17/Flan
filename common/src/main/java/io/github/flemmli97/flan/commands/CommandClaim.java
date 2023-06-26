@@ -156,15 +156,15 @@ public class CommandClaim {
 
     private static int reloadConfig(CommandContext<CommandSourceStack> context) {
         ConfigHandler.reloadConfigs(context.getSource().getServer());
-        context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("configReload")), true);
+        context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("configReload")), true);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int addClaim(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        if (!ItemInteractEvents.canClaimWorld(player.getLevel(), player))
+        if (!ItemInteractEvents.canClaimWorld(player.serverLevel(), player))
             return 0;
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         BlockPos from = BlockPosArgument.getLoadedBlockPos(context, "from");
         BlockPos to = BlockPosArgument.getLoadedBlockPos(context, "to");
         storage.createClaim(from, to, player);
@@ -181,9 +181,9 @@ public class CommandClaim {
 
     private static int addClaimRect(CommandContext<CommandSourceStack> context, int x, int z) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        if (!ItemInteractEvents.canClaimWorld(player.getLevel(), player))
+        if (!ItemInteractEvents.canClaimWorld(player.serverLevel(), player))
             return 0;
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         boolean evenX = x % 2 == 0;
         boolean evenZ = z % 2 == 0;
         BlockPos from = player.blockPosition().offset(evenX ? -(int) ((x - 1) * 0.5) : -(int) (x * 0.5), -5, evenZ ? -(int) ((z - 1) * 0.5) : -(int) (z * 0.5));
@@ -196,11 +196,11 @@ public class CommandClaim {
         ServerPlayer player = context.getSource().getPlayerOrException();
         Collection<GameProfile> profs = GameProfileArgument.getGameProfiles(context, "player");
         if (profs.size() != 1) {
-            context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("onlyOnePlayer"), ChatFormatting.RED), false);
+            context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("onlyOnePlayer"), ChatFormatting.RED), false);
             return 0;
         }
         GameProfile prof = profs.iterator().next();
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         Claim claim = storage.getClaimAt(player.blockPosition());
         if (claim == null) {
             player.displayClientMessage(PermHelper.simpleColoredText(ConfigHandler.langManager.get("noClaim"), ChatFormatting.RED), false);
@@ -231,7 +231,7 @@ public class CommandClaim {
     private static int openMenu(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         PlayerClaimData data = PlayerClaimData.get(player);
-        Claim claim = ClaimStorage.get(player.getLevel()).getClaimAt(player.blockPosition());
+        Claim claim = ClaimStorage.get(player.serverLevel()).getClaimAt(player.blockPosition());
         if (claim == null) {
             PermHelper.noClaimMessage(player);
             return 0;
@@ -253,10 +253,10 @@ public class CommandClaim {
         ServerPlayer player = context.getSource().getPlayerOrException();
         PlayerClaimData data = PlayerClaimData.get(player);
         if (data.setTrappedRescue()) {
-            context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("trappedRescue"), ChatFormatting.GOLD), false);
+            context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("trappedRescue"), ChatFormatting.GOLD), false);
             return Command.SINGLE_SUCCESS;
         } else {
-            context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("trappedFail"), ChatFormatting.RED), false);
+            context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("trappedFail"), ChatFormatting.RED), false);
         }
         return 0;
     }
@@ -268,7 +268,7 @@ public class CommandClaim {
             Claim claim = PermHelper.checkReturn(player, PermissionRegistry.EDITPERMS, PermHelper.genericNoPermMessage(player));
             if (claim == null)
                 return 0;
-            boolean nameUsed = ClaimStorage.get(player.getLevel()).allClaimsFromPlayer(claim.getOwner())
+            boolean nameUsed = ClaimStorage.get(player.serverLevel()).allClaimsFromPlayer(claim.getOwner())
                     .stream().map(Claim::getClaimName).anyMatch(name -> name.equals(StringArgumentType.getString(context, "name")));
             if (!nameUsed) {
                 String name = StringArgumentType.getString(context, "name");
@@ -278,7 +278,7 @@ public class CommandClaim {
                 player.displayClientMessage(PermHelper.simpleColoredText(ConfigHandler.langManager.get("claimNameUsed"), ChatFormatting.DARK_RED), false);
             }
         } else {
-            Claim claim = ClaimStorage.get(player.getLevel()).getClaimAt(player.blockPosition());
+            Claim claim = ClaimStorage.get(player.serverLevel()).getClaimAt(player.blockPosition());
             Claim sub = claim.getSubClaim(player.blockPosition());
             if (sub != null && (claim.canInteract(player, PermissionRegistry.EDITPERMS, player.blockPosition()) || sub.canInteract(player, PermissionRegistry.EDITPERMS, player.blockPosition()))) {
                 boolean nameUsed = claim.getAllSubclaims()
@@ -291,7 +291,7 @@ public class CommandClaim {
                     player.displayClientMessage(PermHelper.simpleColoredText(ConfigHandler.langManager.get("claimNameUsedSub"), ChatFormatting.DARK_RED), false);
                 }
             } else if (claim.canInteract(player, PermissionRegistry.EDITPERMS, player.blockPosition())) {
-                boolean nameUsed = ClaimStorage.get(player.getLevel()).allClaimsFromPlayer(claim.getOwner())
+                boolean nameUsed = ClaimStorage.get(player.serverLevel()).allClaimsFromPlayer(claim.getOwner())
                         .stream().map(Claim::getClaimName).anyMatch(name -> name.equals(StringArgumentType.getString(context, "name")));
                 if (!nameUsed) {
                     String name = StringArgumentType.getString(context, "name");
@@ -310,7 +310,7 @@ public class CommandClaim {
         ServerPlayer player = context.getSource().getPlayerOrException();
         PlayerClaimData data = PlayerClaimData.get(player);
         data.unlockDeathItems();
-        context.getSource().sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("unlockDrops"), ConfigHandler.config.dropTicks), ChatFormatting.GOLD), false);
+        context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("unlockDrops"), ConfigHandler.config.dropTicks), ChatFormatting.GOLD), false);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -325,7 +325,7 @@ public class CommandClaim {
                 success.add(prof.getName());
             }
         }
-        context.getSource().sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("unlockDropsMulti"), success), ChatFormatting.GOLD), false);
+        context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("unlockDropsMulti"), success), ChatFormatting.GOLD), false);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -341,7 +341,7 @@ public class CommandClaim {
 
     private static int claimInfo(CommandContext<CommandSourceStack> context, Claim.InfoType infoType) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        Claim claim = ClaimStorage.get(player.getLevel()).getClaimAt(player.blockPosition());
+        Claim claim = ClaimStorage.get(player.serverLevel()).getClaimAt(player.blockPosition());
         PlayerClaimData data = PlayerClaimData.get(player);
         if (claim == null) {
             player.displayClientMessage(PermHelper.simpleColoredText(ConfigHandler.langManager.get("noClaim"), ChatFormatting.RED), false);
@@ -365,7 +365,7 @@ public class CommandClaim {
 
     private static int deleteClaim(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         Claim claim = storage.getClaimAt(player.blockPosition());
         boolean check = PermHelper.check(player, player.blockPosition(), claim, PermissionRegistry.EDITCLAIM, b -> {
             if (!b.isPresent())
@@ -377,7 +377,7 @@ public class CommandClaim {
         });
         if (!check)
             return 0;
-        storage.deleteClaim(claim, true, PlayerClaimData.get(player).getEditMode(), player.getLevel());
+        storage.deleteClaim(claim, true, PlayerClaimData.get(player).getEditMode(), player.serverLevel());
         return Command.SINGLE_SUCCESS;
     }
 
@@ -387,7 +387,7 @@ public class CommandClaim {
         if (data.confirmedDeleteAll()) {
             for (ServerLevel world : player.getServer().getAllLevels()) {
                 ClaimStorage storage = ClaimStorage.get(world);
-                storage.allClaimsFromPlayer(player.getUUID()).forEach((claim) -> storage.deleteClaim(claim, true, PlayerClaimData.get(player).getEditMode(), player.getLevel()));
+                storage.allClaimsFromPlayer(player.getUUID()).forEach((claim) -> storage.deleteClaim(claim, true, PlayerClaimData.get(player).getEditMode(), player.serverLevel()));
             }
             player.displayClientMessage(PermHelper.simpleColoredText(ConfigHandler.langManager.get("deleteAllClaim"), ChatFormatting.GOLD), false);
             data.setConfirmDeleteAll(false);
@@ -400,7 +400,7 @@ public class CommandClaim {
 
     private static int deleteSubClaim(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         Claim claim = storage.getClaimAt(player.blockPosition());
         if (claim == null) {
             player.displayClientMessage(PermHelper.simpleColoredText(ConfigHandler.langManager.get("noClaim"), ChatFormatting.RED), false);
@@ -442,7 +442,7 @@ public class CommandClaim {
 
     private static int listClaims(CommandContext<CommandSourceStack> context, Collection<GameProfile> profs) throws CommandSyntaxException {
         if (profs.size() != 1) {
-            context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("onlyOnePlayer"), ChatFormatting.RED), false);
+            context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("onlyOnePlayer"), ChatFormatting.RED), false);
             return 0;
         }
         GameProfile prof = profs.iterator().next();
@@ -462,18 +462,18 @@ public class CommandClaim {
         if (ConfigHandler.config.maxClaimBlocks != -1) {
             if (player != null) {
                 PlayerClaimData data = PlayerClaimData.get(player);
-                context.getSource().sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("claimBlocksFormat"),
+                context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("claimBlocksFormat"),
                         data.getClaimBlocks(), data.getAdditionalClaims(), data.usedClaimBlocks(), data.remainingClaimBlocks()), ChatFormatting.GOLD), false);
             } else {
                 OfflinePlayerData data = new OfflinePlayerData(server, of);
-                context.getSource().sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("claimBlocksFormat"),
+                context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("claimBlocksFormat"),
                         data.claimBlocks, data.getAdditionalClaims(), data.usedClaimBlocks(), data.remainingClaimBlocks()), ChatFormatting.GOLD), false);
             }
         }
-        context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("listClaims"), ChatFormatting.GOLD), false);
+        context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("listClaims"), ChatFormatting.GOLD), false);
         for (Map.Entry<Level, Collection<Claim>> entry : claims.entrySet())
             for (Claim claim : entry.getValue())
-                context.getSource().sendSuccess(PermHelper.simpleColoredText(
+                context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(
                         entry.getKey().dimension().location().toString() + " # " + claim.formattedClaim(), ChatFormatting.YELLOW), false);
         return Command.SINGLE_SUCCESS;
     }
@@ -499,11 +499,11 @@ public class CommandClaim {
         ClaimStorage storage = ClaimStorage.get(src.getLevel());
         Claim claim = storage.getClaimAt(BlockPos.containing(src.getPosition()));
         if (claim == null) {
-            src.sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("noClaim"), ChatFormatting.RED), false);
+            src.sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("noClaim"), ChatFormatting.RED), false);
             return 0;
         }
         storage.deleteClaim(claim, true, EnumEditMode.DEFAULT, src.getLevel());
-        src.sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("deleteClaim"), ChatFormatting.RED), true);
+        src.sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("deleteClaim"), ChatFormatting.RED), true);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -525,39 +525,39 @@ public class CommandClaim {
             }
             players.add(prof.getName());
         }
-        src.sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("adminDeleteAll"), players), ChatFormatting.GOLD), true);
+        src.sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("adminDeleteAll"), players), ChatFormatting.GOLD), true);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int toggleAdminClaim(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         Claim claim = storage.getClaimAt(player.blockPosition());
         if (claim == null) {
-            context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("noClaim"), ChatFormatting.RED), false);
+            context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("noClaim"), ChatFormatting.RED), false);
             return 0;
         }
         storage.toggleAdminClaim(player, claim, BoolArgumentType.getBool(context, "toggle"));
-        context.getSource().sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("setAdminClaim"), claim.isAdminClaim()), ChatFormatting.GOLD), true);
+        context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("setAdminClaim"), claim.isAdminClaim()), ChatFormatting.GOLD), true);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int listAdminClaims(CommandContext<CommandSourceStack> context) {
         CommandSourceStack src = context.getSource();
         Collection<Claim> claims = ClaimStorage.get(src.getLevel()).getAdminClaims();
-        src.sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("listAdminClaims"), src.getLevel().dimension().location()), ChatFormatting.GOLD), false);
+        src.sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("listAdminClaims"), src.getLevel().dimension().location()), ChatFormatting.GOLD), false);
         for (Claim claim : claims)
-            src.sendSuccess(PermHelper.simpleColoredText(claim.formattedClaim(), ChatFormatting.YELLOW), false);
+            src.sendSuccess(() -> PermHelper.simpleColoredText(claim.formattedClaim(), ChatFormatting.YELLOW), false);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int readGriefPreventionData(CommandContext<CommandSourceStack> context) {
         CommandSourceStack src = context.getSource();
-        src.sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("readGriefpreventionData"), ChatFormatting.GOLD), true);
+        src.sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("readGriefpreventionData"), ChatFormatting.GOLD), true);
         if (ClaimStorage.readGriefPreventionData(src.getServer(), src))
-            src.sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("readGriefpreventionClaimDataSuccess"), ChatFormatting.GOLD), true);
+            src.sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("readGriefpreventionClaimDataSuccess"), ChatFormatting.GOLD), true);
         if (PlayerClaimData.readGriefPreventionPlayerData(src.getServer(), src))
-            src.sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("readGriefpreventionPlayerDataSuccess"), ChatFormatting.GOLD), true);
+            src.sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("readGriefpreventionPlayerDataSuccess"), ChatFormatting.GOLD), true);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -574,7 +574,7 @@ public class CommandClaim {
                 PlayerClaimData.editForOfflinePlayer(src.getServer(), prof.getId(), amount);
             players.add(prof.getName());
         }
-        src.sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("giveClaimBlocks"), players, amount), ChatFormatting.GOLD), true);
+        src.sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("giveClaimBlocks"), players, amount), ChatFormatting.GOLD), true);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -589,7 +589,7 @@ public class CommandClaim {
     private static int modifyGroup(CommandContext<CommandSourceStack> context, boolean remove) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         String group = StringArgumentType.getString(context, "group");
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         Claim claim = storage.getClaimAt(player.blockPosition());
         if (claim == null) {
             PermHelper.noClaimMessage(player);
@@ -637,7 +637,7 @@ public class CommandClaim {
 
     private static int modifyPlayer(CommandContext<CommandSourceStack> context, String group, boolean force) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         Claim claim = storage.getClaimAt(player.blockPosition());
         if (claim == null) {
             PermHelper.noClaimMessage(player);
@@ -682,7 +682,7 @@ public class CommandClaim {
 
     private static int modifyFakePlayer(CommandContext<CommandSourceStack> context, boolean remove) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         Claim claim = storage.getClaimAt(player.blockPosition());
         if (claim == null) {
             PermHelper.noClaimMessage(player);
@@ -729,7 +729,7 @@ public class CommandClaim {
 
     private static int editPerms(CommandContext<CommandSourceStack> context, String group, int mode) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        Claim claim = ClaimStorage.get(player.getLevel()).getClaimAt(player.blockPosition());
+        Claim claim = ClaimStorage.get(player.serverLevel()).getClaimAt(player.blockPosition());
         PlayerClaimData data = PlayerClaimData.get(player);
         if (data.getEditMode() == EnumEditMode.SUBCLAIM) {
             Claim sub = claim.getSubClaim(player.blockPosition());
@@ -800,7 +800,7 @@ public class CommandClaim {
         if (claim == null)
             return 0;
         claim.setHomePos(player.blockPosition());
-        context.getSource().sendSuccess(PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("setHome"), player.blockPosition().getX(), player.blockPosition().getY(), player.blockPosition().getZ()), ChatFormatting.GOLD), false);
+        context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(String.format(ConfigHandler.langManager.get("setHome"), player.blockPosition().getX(), player.blockPosition().getY(), player.blockPosition().getZ()), ChatFormatting.GOLD), false);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -810,7 +810,7 @@ public class CommandClaim {
         if (claim == null)
             return 0;
 
-        ClaimStorage storage = ClaimStorage.get(player.getLevel());
+        ClaimStorage storage = ClaimStorage.get(player.serverLevel());
         int amount = IntegerArgumentType.getInteger(context, "distance");
         int[] dims = claim.getDimensions();
         int x = dims[0];
@@ -843,7 +843,7 @@ public class CommandClaim {
     public static int teleport(CommandContext<CommandSourceStack> context, UUID owner) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         String name = StringArgumentType.getString(context, "claim");
-        return ClaimStorage.get(player.getLevel()).allClaimsFromPlayer(owner)
+        return ClaimStorage.get(player.serverLevel()).allClaimsFromPlayer(owner)
                 .stream().filter(claim -> {
                     if (claim.getClaimName().isEmpty())
                         return claim.getClaimID().toString().equals(name);
@@ -853,12 +853,12 @@ public class CommandClaim {
                     if (claim.canInteract(player, PermissionRegistry.TELEPORT, pos, false)) {
                         PlayerClaimData data = PlayerClaimData.get(player);
                         if (data.setTeleportTo(pos)) {
-                            context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("teleportHome"), ChatFormatting.GOLD), false);
+                            context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("teleportHome"), ChatFormatting.GOLD), false);
                             return Command.SINGLE_SUCCESS;
                         }
-                        context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("teleportHomeFail"), ChatFormatting.RED), false);
+                        context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("teleportHomeFail"), ChatFormatting.RED), false);
                     } else
-                        context.getSource().sendSuccess(PermHelper.simpleColoredText(ConfigHandler.langManager.get("noPermissionSimple"), ChatFormatting.DARK_RED), false);
+                        context.getSource().sendSuccess(() -> PermHelper.simpleColoredText(ConfigHandler.langManager.get("noPermissionSimple"), ChatFormatting.DARK_RED), false);
                     return 0;
                 }).orElse(0);
     }
@@ -905,17 +905,17 @@ public class CommandClaim {
             }
         }
         MutableComponent cmdFeed = Component.translatable(feedback, text).withStyle(ChatFormatting.GOLD);
-        context.getSource().sendSuccess(cmdFeed, false);
+        context.getSource().sendSuccess(() -> cmdFeed, false);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int sellClaimBlocks(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        boolean b = ConfigHandler.config.buySellHandler.sell(context.getSource().getPlayerOrException(), Math.max(0, IntegerArgumentType.getInteger(context, "amount")), m -> context.getSource().sendSuccess(m, false));
+        boolean b = ConfigHandler.config.buySellHandler.sell(context.getSource().getPlayerOrException(), Math.max(0, IntegerArgumentType.getInteger(context, "amount")), m -> context.getSource().sendSuccess(() -> m, false));
         return b ? Command.SINGLE_SUCCESS : 0;
     }
 
     private static int buyClaimBlocks(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        boolean b = ConfigHandler.config.buySellHandler.buy(context.getSource().getPlayerOrException(), Math.max(0, IntegerArgumentType.getInteger(context, "amount")), m -> context.getSource().sendSuccess(m, false));
+        boolean b = ConfigHandler.config.buySellHandler.buy(context.getSource().getPlayerOrException(), Math.max(0, IntegerArgumentType.getInteger(context, "amount")), m -> context.getSource().sendSuccess(() -> m, false));
         return b ? Command.SINGLE_SUCCESS : 0;
     }
 }

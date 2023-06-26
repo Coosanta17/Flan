@@ -5,7 +5,6 @@ import draylar.goml.api.ClaimUtils;
 import io.github.flemmli97.flan.Flan;
 import io.github.flemmli97.flan.claim.Claim;
 import io.github.flemmli97.flan.config.ConfigHandler;
-import io.github.flemmli97.flan.platform.integration.claiming.FTBChunks;
 import io.github.flemmli97.flan.platform.integration.claiming.OtherClaimingModCheck;
 import io.github.flemmli97.flan.player.display.DisplayBox;
 
@@ -14,7 +13,6 @@ import java.util.Set;
 public class OtherClaimingModCheckImpl implements OtherClaimingModCheck {
 
     public void findConflicts(Claim claim, Set<DisplayBox> set) {
-        FTBChunks.findConflicts(claim, set);
         if (Flan.gomlServer && ConfigHandler.config.gomlReservedCheck) {
             int[] dim = claim.getDimensions();
             ClaimUtils.getClaimsInBox(claim.getWorld(), ClaimUtils.createBox(dim[0] - 1, dim[4], dim[2] - 1, dim[1] + 1, claim.getWorld().getMaxBuildHeight(), dim[3] + 1))

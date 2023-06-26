@@ -64,7 +64,7 @@ public class WorldEvents {
     }
 
     public static boolean canStartRaid(ServerPlayer player) {
-        IPermissionContainer claim = ClaimStorage.get(player.getLevel()).getForPermissionCheck(player.blockPosition());
+        IPermissionContainer claim = ClaimStorage.get(player.serverLevel()).getForPermissionCheck(player.blockPosition());
         return claim.canInteract(player, PermissionRegistry.RAID, player.blockPosition());
     }
 
@@ -81,7 +81,7 @@ public class WorldEvents {
     }
 
     public static boolean lightningFire(LightningBolt lightning) {
-        if (!(lightning.level instanceof ServerLevel world))
+        if (!(lightning.level() instanceof ServerLevel world))
             return true;
         BlockPos.MutableBlockPos mutable = lightning.blockPosition().mutable();
         for (int x = -1; x <= 1; x++)

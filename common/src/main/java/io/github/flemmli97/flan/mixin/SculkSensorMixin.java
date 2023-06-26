@@ -17,9 +17,8 @@ import javax.annotation.Nullable;
 
 @Mixin(SculkSensorBlock.class)
 public abstract class SculkSensorMixin {
-
     @Inject(method = "activate", at = @At("HEAD"), cancellable = true)
-    private static void playerPermCheck(@Nullable Entity entity, Level level, BlockPos pos, BlockState state, int strength, CallbackInfo info) {
+    private void playerPermCheck(@Nullable Entity entity, Level level, BlockPos pos, BlockState state, int i, int j, CallbackInfo info) {
         ServerPlayer player = null;
         if (entity instanceof ServerPlayer p)
             player = p;
